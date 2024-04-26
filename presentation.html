@@ -404,18 +404,51 @@
 <p>DBI = Database Interface</p>
 <p>Various packages the driver functionality (e.g.&nbsp;RPostgres, odbc, DatabaseConnector)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(RPostgres<span class="sc">::</span><span class="fu">Postgres</span>(),</span>
-<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="at">dbname =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_POSTGRESQL_DBNAME"</span>),</span>
-<span id="cb1-3"><a href="#cb1-3"></a>                      <span class="at">host =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_POSTGRESQL_HOST"</span>),</span>
-<span id="cb1-4"><a href="#cb1-4"></a>                      <span class="at">user =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_POSTGRESQL_USER"</span>),</span>
-<span id="cb1-5"><a href="#cb1-5"></a>                      <span class="at">password =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_POSTGRESQL_PASSWORD"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(odbc<span class="sc">::</span><span class="fu">odbc</span>(),</span>
+<span id="cb1-2"><a href="#cb1-2"></a>                      <span class="at">Driver   =</span> <span class="fu">Sys.getenv</span>(<span class="st">"SQL_SERVER_DRIVER"</span>),</span>
+<span id="cb1-3"><a href="#cb1-3"></a>                      <span class="at">Server   =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_SQL_SERVER_SERVER"</span>),</span>
+<span id="cb1-4"><a href="#cb1-4"></a>                      <span class="at">Database =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_SQL_SERVER_CDM_DATABASE"</span>),</span>
+<span id="cb1-5"><a href="#cb1-5"></a>                      <span class="at">UID      =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_SQL_SERVER_USER"</span>),</span>
+<span id="cb1-6"><a href="#cb1-6"></a>                      <span class="at">PWD      =</span> <span class="fu">Sys.getenv</span>(<span class="st">"CDM5_SQL_SERVER_PASSWORD"</span>),</span>
+<span id="cb1-7"><a href="#cb1-7"></a>                      <span class="at">TrustServerCertificate=</span><span class="st">"yes"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8"></a>                      <span class="at">Port     =</span> <span class="dv">1433</span>)</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>cdmSchema <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">catalog =</span> <span class="st">"cdmv5"</span>, <span class="at">schema =</span> <span class="st">"dbo"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>writeSchema <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">catalog =</span> <span class="st">"tempdb"</span>, <span class="at">schema =</span> <span class="st">"dbo"</span>, <span class="at">prefix =</span> <span class="st">"temp_"</span>)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>achillesSchema <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">catalog =</span> <span class="st">"ohdsi"</span>, <span class="at">schema =</span> <span class="st">"dbo"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="create-cdm-reference" class="slide level2">
+<h2>Create CDM reference</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">library</span>(CDMConnector)</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  con,</span>
+<span id="cb2-5"><a href="#cb2-5"></a>  <span class="at">cdmSchema =</span> cdmSchema,</span>
+<span id="cb2-6"><a href="#cb2-6"></a>  <span class="at">writeSchema =</span> writeSchema,</span>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="at">achillesSchema =</span> achillesSchema</span>
+<span id="cb2-8"><a href="#cb2-8"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: visit_detail table not included in cdm because:
+Error in `newOmopTable()`: ! visit_detail_type_concept_id is not present in
+table visit_detail</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: note table not included in cdm because:
+Error in `newOmopTable()`: ! note_class_concept_id, encoding_concept_id and
+language_concept_id are not present in table note</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>DBI<span class="sc">::</span><span class="fu">dbDisconnect</span>(con)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="example-cdm-datasets-eunomia" class="slide level2">
 <h2>Example CDM datasets (Eunomia)</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="fu">library</span>(CDMConnector)</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="fu">exampleDatasets</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="fu">library</span>(CDMConnector)</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="fu">exampleDatasets</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "GiBleed"                             "synthea-allergies-10k"              
  [3] "synthea-anemia-10k"                  "synthea-breast_cancer-10k"          
@@ -435,21 +468,21 @@
 <h2>Example CDM datasets (Eunomia)</h2>
 <p>Download and connect to an example CDM database</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="fu">library</span>(CDMConnector)</span>
-<span id="cb4-2"><a href="#cb4-2"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
-<span id="cb4-3"><a href="#cb4-3"></a>                      <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>(<span class="st">"synthea-covid19-200k"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="fu">library</span>(CDMConnector)</span>
+<span id="cb8-2"><a href="#cb8-2"></a>con <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(duckdb<span class="sc">::</span><span class="fu">duckdb</span>(), </span>
+<span id="cb8-3"><a href="#cb8-3"></a>                      <span class="at">dbdir =</span> <span class="fu">eunomiaDir</span>(<span class="st">"synthea-covid19-200k"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="create-a-cdm-object-reference" class="slide level2">
 <h2>Create a cdm object reference</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  con,</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="at">cdmSchema =</span> <span class="st">"main"</span>,</span>
-<span id="cb5-4"><a href="#cb5-4"></a>  <span class="at">writeSchema =</span> <span class="st">"main"</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a>)</span>
-<span id="cb5-6"><a href="#cb5-6"></a></span>
-<span id="cb5-7"><a href="#cb5-7"></a><span class="fu">print</span>(cdm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>cdm <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(</span>
+<span id="cb9-2"><a href="#cb9-2"></a>  con,</span>
+<span id="cb9-3"><a href="#cb9-3"></a>  <span class="at">cdmSchema =</span> <span class="st">"main"</span>,</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  <span class="at">writeSchema =</span> <span class="st">"main"</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a>)</span>
+<span id="cb9-6"><a href="#cb9-6"></a></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="fu">print</span>(cdm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code></code></pre>
 </div>
@@ -489,10 +522,10 @@ attribute_definition</code></pre>
 <h2>Create a cdm object reference</h2>
 <p>This object is a list of table references (like Andromda)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>cdm<span class="sc">$</span>person</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>cdm<span class="sc">$</span>person</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   table&lt;main.person&gt; [?? x 18]
-# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
    person_id gender_concept_id year_of_birth month_of_birth day_of_birth
        &lt;int&gt;             &lt;int&gt;         &lt;int&gt;          &lt;int&gt;        &lt;int&gt;
  1         1              8532          1961             10            7
@@ -519,7 +552,7 @@ attribute_definition</code></pre>
 <h2>Database Characterization</h2>
 <p>We can get some basic info about the cdm using <code>snapshot</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="fu">snapshot</span>(cdm) <span class="sc">%&gt;%</span> tidyr<span class="sc">::</span><span class="fu">gather</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="fu">snapshot</span>(cdm) <span class="sc">%&gt;%</span> tidyr<span class="sc">::</span><span class="fu">gather</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 13 × 2
    key                                    value                                 
@@ -545,7 +578,7 @@ attribute_definition</code></pre>
 <ul>
 <li>Write dplyr code to query the CDM</li>
 <li>dplyr gets translated to SQL automatically</li>
-<li>We test on Postgres, SQL Server, Snowflake, Redshift, duckdb</li>
+<li>testing Postgres, SQLServer, Snowflake, Redshift, duckdb</li>
 <li>Adding Databricks/Spark tests soon</li>
 <li>Aim to support all OHDSI dbms and any R driver backend</li>
 </ul>
@@ -554,15 +587,15 @@ attribute_definition</code></pre>
 <h2>CDM Queries</h2>
 <p>Most common drug ingredients</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="fu">library</span>(dplyr, <span class="at">warn.conflicts =</span> F)</span>
-<span id="cb16-2"><a href="#cb16-2"></a></span>
-<span id="cb16-3"><a href="#cb16-3"></a>cdm<span class="sc">$</span>drug_era <span class="sc">%&gt;%</span> </span>
-<span id="cb16-4"><a href="#cb16-4"></a>  <span class="fu">left_join</span>(cdm<span class="sc">$</span>concept, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"drug_concept_id"</span> <span class="ot">=</span> <span class="st">"concept_id"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb16-5"><a href="#cb16-5"></a>  <span class="fu">select</span>(<span class="at">drug_concept =</span> concept_name, drug_concept_id) <span class="sc">%&gt;%</span> </span>
-<span id="cb16-6"><a href="#cb16-6"></a>  <span class="fu">count</span>(drug_concept, drug_concept_id, <span class="at">sort =</span> T) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="fu">library</span>(dplyr, <span class="at">warn.conflicts =</span> F)</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>cdm<span class="sc">$</span>drug_era <span class="sc">%&gt;%</span> </span>
+<span id="cb20-4"><a href="#cb20-4"></a>  <span class="fu">left_join</span>(cdm<span class="sc">$</span>concept, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"drug_concept_id"</span> <span class="ot">=</span> <span class="st">"concept_id"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-5"><a href="#cb20-5"></a>  <span class="fu">select</span>(<span class="at">drug_concept =</span> concept_name, drug_concept_id) <span class="sc">%&gt;%</span> </span>
+<span id="cb20-6"><a href="#cb20-6"></a>  <span class="fu">count</span>(drug_concept, drug_concept_id, <span class="at">sort =</span> T) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:     SQL [?? x 3]
-# Database:   DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database:   DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
 # Ordered by: desc(n)
    drug_concept  drug_concept_id     n
    &lt;chr&gt;                   &lt;int&gt; &lt;dbl&gt;
@@ -584,11 +617,11 @@ attribute_definition</code></pre>
 <h2>CDM Queries</h2>
 <p>Inspect the SQL</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>cdm<span class="sc">$</span>drug_exposure <span class="sc">%&gt;%</span> </span>
-<span id="cb18-2"><a href="#cb18-2"></a>  <span class="fu">left_join</span>(cdm<span class="sc">$</span>concept, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"drug_concept_id"</span> <span class="ot">=</span> <span class="st">"concept_id"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb18-3"><a href="#cb18-3"></a>  <span class="fu">select</span>(<span class="at">drug_concept =</span> concept_name) <span class="sc">%&gt;%</span> </span>
-<span id="cb18-4"><a href="#cb18-4"></a>  <span class="fu">count</span>(drug_concept, <span class="at">sort =</span> T) <span class="sc">%&gt;%</span> </span>
-<span id="cb18-5"><a href="#cb18-5"></a>  <span class="fu">show_query</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>cdm<span class="sc">$</span>drug_exposure <span class="sc">%&gt;%</span> </span>
+<span id="cb22-2"><a href="#cb22-2"></a>  <span class="fu">left_join</span>(cdm<span class="sc">$</span>concept, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"drug_concept_id"</span> <span class="ot">=</span> <span class="st">"concept_id"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-3"><a href="#cb22-3"></a>  <span class="fu">select</span>(<span class="at">drug_concept =</span> concept_name) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-4"><a href="#cb22-4"></a>  <span class="fu">count</span>(drug_concept, <span class="at">sort =</span> T) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-5"><a href="#cb22-5"></a>  <span class="fu">show_query</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;SQL&gt;
 SELECT drug_concept, COUNT(*) AS n
@@ -611,12 +644,12 @@ ORDER BY n DESC</code></pre>
 <section id="query-functions-1" class="slide level2">
 <h2>Query functions</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>cdm<span class="sc">$</span>person <span class="sc">%&gt;%</span> </span>
-<span id="cb20-2"><a href="#cb20-2"></a>  <span class="fu">group_by</span>(gender_concept_id) <span class="sc">%&gt;%</span> </span>
-<span id="cb20-3"><a href="#cb20-3"></a>  <span class="fu">summarize_quantile</span>(year_of_birth, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>, <span class="at">by =</span> .<span class="dv">1</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>cdm<span class="sc">$</span>person <span class="sc">%&gt;%</span> </span>
+<span id="cb24-2"><a href="#cb24-2"></a>  <span class="fu">group_by</span>(gender_concept_id) <span class="sc">%&gt;%</span> </span>
+<span id="cb24-3"><a href="#cb24-3"></a>  <span class="fu">summarize_quantile</span>(year_of_birth, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>, <span class="at">by =</span> .<span class="dv">1</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:     SQL [2 x 12]
-# Database:   DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database:   DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
 # Ordered by: year_of_birth
   gender_concept_id p0_value p10_value p20_value p30_value p40_value p50_value
               &lt;int&gt;    &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt;     &lt;int&gt;
@@ -631,10 +664,10 @@ ORDER BY n DESC</code></pre>
 <h2>Query functions</h2>
 <p>This saves us from writing a lot of SQL</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>cdm<span class="sc">$</span>person <span class="sc">%&gt;%</span> </span>
-<span id="cb22-2"><a href="#cb22-2"></a>  <span class="fu">group_by</span>(gender_concept_id) <span class="sc">%&gt;%</span> </span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="fu">summarize_quantile</span>(year_of_birth, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>, <span class="at">by =</span> .<span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb22-4"><a href="#cb22-4"></a>  <span class="fu">show_query</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>cdm<span class="sc">$</span>person <span class="sc">%&gt;%</span> </span>
+<span id="cb26-2"><a href="#cb26-2"></a>  <span class="fu">group_by</span>(gender_concept_id) <span class="sc">%&gt;%</span> </span>
+<span id="cb26-3"><a href="#cb26-3"></a>  <span class="fu">summarize_quantile</span>(year_of_birth, <span class="at">probs =</span> <span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">1</span>, <span class="at">by =</span> .<span class="dv">1</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb26-4"><a href="#cb26-4"></a>  <span class="fu">show_query</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;SQL&gt;
 SELECT
@@ -672,11 +705,11 @@ GROUP BY gender_concept_id</code></pre>
 <li>Use descriptive filenames</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="fu">list.files</span>(<span class="st">"cohorts"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="fu">list.files</span>(<span class="st">"cohorts"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "covid_19.json"        "type_2_diabetes.json"</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>(cohortSet <span class="ot">&lt;-</span> <span class="fu">readCohortSet</span>(<span class="st">"cohorts"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>(cohortSet <span class="ot">&lt;-</span> <span class="fu">readCohortSet</span>(<span class="st">"cohorts"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 5
   cohort_definition_id cohort_name     cohort       json   cohort_name_snakecase
@@ -689,27 +722,27 @@ GROUP BY gender_concept_id</code></pre>
 <section id="cohort-generation-1" class="slide level2">
 <h2>Cohort Generation</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>cdm <span class="ot">&lt;-</span> cdm <span class="sc">%&gt;%</span> </span>
-<span id="cb28-2"><a href="#cb28-2"></a>  <span class="fu">generateCohortSet</span>(cohortSet,</span>
-<span id="cb28-3"><a href="#cb28-3"></a>                    <span class="at">name =</span> <span class="st">"cohort"</span>, </span>
-<span id="cb28-4"><a href="#cb28-4"></a>                    <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb28-5"><a href="#cb28-5"></a></span>
-<span id="cb28-6"><a href="#cb28-6"></a>cdm<span class="sc">$</span>cohort</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>cdm <span class="ot">&lt;-</span> cdm <span class="sc">%&gt;%</span> </span>
+<span id="cb32-2"><a href="#cb32-2"></a>  <span class="fu">generateCohortSet</span>(cohortSet,</span>
+<span id="cb32-3"><a href="#cb32-3"></a>                    <span class="at">name =</span> <span class="st">"cohort"</span>, </span>
+<span id="cb32-4"><a href="#cb32-4"></a>                    <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-5"><a href="#cb32-5"></a></span>
+<span id="cb32-6"><a href="#cb32-6"></a>cdm<span class="sc">$</span>cohort</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   table&lt;main.cohort&gt; [?? x 4]
-# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
    cohort_definition_id subject_id cohort_start_date cohort_end_date
                   &lt;int&gt;      &lt;dbl&gt; &lt;date&gt;            &lt;date&gt;         
- 1                    1       2619 2021-01-08        2021-01-28     
- 2                    1       7517 2020-11-29        2020-12-27     
- 3                    1      76609 2021-01-25        2021-03-03     
- 4                    1      81731 2020-09-15        2020-10-04     
- 5                    1      98081 2020-07-06        2020-08-09     
- 6                    1     112496 2020-11-04        2020-12-03     
- 7                    1     126959 2020-08-30        2020-10-03     
- 8                    1     128111 2020-07-07        2020-08-05     
- 9                    1     148438 2020-11-11        2020-11-25     
-10                    1     152652 2021-08-16        2021-09-01     
+ 1                    1      13665 2020-03-29        2020-04-17     
+ 2                    1      29750 2020-11-10        2020-11-28     
+ 3                    1      35412 2020-07-17        2020-07-27     
+ 4                    1      53756 2020-12-20        2020-12-29     
+ 5                    1      70193 2021-03-30        2021-04-24     
+ 6                    1      74633 2020-03-22        2020-04-24     
+ 7                    1      75300 2020-07-22        2020-08-21     
+ 8                    1      94403 2021-03-04        2021-03-04     
+ 9                    1      98279 2020-06-29        2020-08-04     
+10                    1       5815 2020-12-06        2021-01-08     
 # ℹ more rows</code></pre>
 </div>
 </div>
@@ -717,7 +750,7 @@ GROUP BY gender_concept_id</code></pre>
 <section id="cohort-table-attributes" class="slide level2">
 <h2>Cohort table attributes</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a><span class="fu">cohort_count</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 3
   cohort_definition_id number_records number_subjects
@@ -725,7 +758,7 @@ GROUP BY gender_concept_id</code></pre>
 1                    1          18744           18744
 2                    2              0               0</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a><span class="fu">settings</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 2
   cohort_definition_id cohort_name    
@@ -733,7 +766,7 @@ GROUP BY gender_concept_id</code></pre>
 1                    1 covid_19       
 2                    2 type_2_diabetes</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a><span class="fu">cohort_attrition</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 7
   cohort_definition_id number_records number_subjects reason_id reason          
@@ -747,21 +780,21 @@ GROUP BY gender_concept_id</code></pre>
 <section id="cohort-tables-from-concepts-sets" class="slide level2">
 <h2>Cohort tables from concepts sets</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a>clopidogrel <span class="ot">&lt;-</span> CodelistGenerator<span class="sc">::</span><span class="fu">getDescendants</span>(cdm, <span class="dv">1322184</span>)</span>
-<span id="cb36-2"><a href="#cb36-2"></a>nitroglycerin <span class="ot">&lt;-</span> CodelistGenerator<span class="sc">::</span><span class="fu">getDescendants</span>(cdm, <span class="dv">1361711</span>)</span>
-<span id="cb36-3"><a href="#cb36-3"></a></span>
-<span id="cb36-4"><a href="#cb36-4"></a>cdm <span class="ot">&lt;-</span> <span class="fu">generateConceptCohortSet</span>(</span>
-<span id="cb36-5"><a href="#cb36-5"></a>  cdm,</span>
-<span id="cb36-6"><a href="#cb36-6"></a>  <span class="at">name =</span> <span class="st">"cohort"</span>,</span>
-<span id="cb36-7"><a href="#cb36-7"></a>  <span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">"clopidogrel"</span> <span class="ot">=</span> clopidogrel<span class="sc">$</span>concept_id,</span>
-<span id="cb36-8"><a href="#cb36-8"></a>                    <span class="st">"nitroglycerin"</span> <span class="ot">=</span> nitroglycerin<span class="sc">$</span>concept_id),</span>
-<span id="cb36-9"><a href="#cb36-9"></a>  <span class="at">limit =</span> <span class="st">"first"</span>,</span>
-<span id="cb36-10"><a href="#cb36-10"></a>  <span class="at">requiredObservation =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>),</span>
-<span id="cb36-11"><a href="#cb36-11"></a>  <span class="at">end =</span> <span class="st">"observation_period_end_date"</span>,</span>
-<span id="cb36-12"><a href="#cb36-12"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span></span>
-<span id="cb36-13"><a href="#cb36-13"></a>)</span>
-<span id="cb36-14"><a href="#cb36-14"></a></span>
-<span id="cb36-15"><a href="#cb36-15"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a>clopidogrel <span class="ot">&lt;-</span> CodelistGenerator<span class="sc">::</span><span class="fu">getDescendants</span>(cdm, <span class="dv">1322184</span>)</span>
+<span id="cb40-2"><a href="#cb40-2"></a>nitroglycerin <span class="ot">&lt;-</span> CodelistGenerator<span class="sc">::</span><span class="fu">getDescendants</span>(cdm, <span class="dv">1361711</span>)</span>
+<span id="cb40-3"><a href="#cb40-3"></a></span>
+<span id="cb40-4"><a href="#cb40-4"></a>cdm <span class="ot">&lt;-</span> <span class="fu">generateConceptCohortSet</span>(</span>
+<span id="cb40-5"><a href="#cb40-5"></a>  cdm,</span>
+<span id="cb40-6"><a href="#cb40-6"></a>  <span class="at">name =</span> <span class="st">"cohort"</span>,</span>
+<span id="cb40-7"><a href="#cb40-7"></a>  <span class="at">conceptSet =</span> <span class="fu">list</span>(<span class="st">"clopidogrel"</span> <span class="ot">=</span> clopidogrel<span class="sc">$</span>concept_id,</span>
+<span id="cb40-8"><a href="#cb40-8"></a>                    <span class="st">"nitroglycerin"</span> <span class="ot">=</span> nitroglycerin<span class="sc">$</span>concept_id),</span>
+<span id="cb40-9"><a href="#cb40-9"></a>  <span class="at">limit =</span> <span class="st">"first"</span>,</span>
+<span id="cb40-10"><a href="#cb40-10"></a>  <span class="at">requiredObservation =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb40-11"><a href="#cb40-11"></a>  <span class="at">end =</span> <span class="st">"observation_period_end_date"</span>,</span>
+<span id="cb40-12"><a href="#cb40-12"></a>  <span class="at">overwrite =</span> <span class="cn">TRUE</span></span>
+<span id="cb40-13"><a href="#cb40-13"></a>)</span>
+<span id="cb40-14"><a href="#cb40-14"></a></span>
+<span id="cb40-15"><a href="#cb40-15"></a><span class="fu">cohortCount</span>(cdm<span class="sc">$</span>cohort)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 3
   cohort_definition_id number_records number_subjects
@@ -774,21 +807,21 @@ GROUP BY gender_concept_id</code></pre>
 <section id="subsetting-the-cdm" class="slide level2">
 <h2>Subsetting the CDM</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a>cdm2 <span class="ot">&lt;-</span> cdm <span class="sc">%&gt;%</span> </span>
-<span id="cb38-2"><a href="#cb38-2"></a>  <span class="fu">cdmSubsetCohort</span>(<span class="at">cohortTable =</span> <span class="st">"cohort"</span>, <span class="at">cohortId =</span> <span class="dv">1</span>, <span class="at">verbose =</span> T)</span>
-<span id="cb38-3"><a href="#cb38-3"></a></span>
-<span id="cb38-4"><a href="#cb38-4"></a><span class="fu">tally</span>(cdm<span class="sc">$</span>person)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>cdm2 <span class="ot">&lt;-</span> cdm <span class="sc">%&gt;%</span> </span>
+<span id="cb42-2"><a href="#cb42-2"></a>  <span class="fu">cdmSubsetCohort</span>(<span class="at">cohortTable =</span> <span class="st">"cohort"</span>, <span class="at">cohortId =</span> <span class="dv">1</span>, <span class="at">verbose =</span> T)</span>
+<span id="cb42-3"><a href="#cb42-3"></a></span>
+<span id="cb42-4"><a href="#cb42-4"></a><span class="fu">tally</span>(cdm<span class="sc">$</span>person)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   SQL [1 x 1]
-# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
        n
    &lt;dbl&gt;
 1 213953</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a><span class="fu">tally</span>(cdm2<span class="sc">$</span>person)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a><span class="fu">tally</span>(cdm2<span class="sc">$</span>person)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   SQL [1 x 1]
-# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
       n
   &lt;dbl&gt;
 1 29051</code></pre>
@@ -798,23 +831,23 @@ GROUP BY gender_concept_id</code></pre>
 <section id="flatten-a-cdm" class="slide level2">
 <h2>Flatten a CDM</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>cdm2 <span class="sc">%&gt;%</span> </span>
-<span id="cb42-2"><a href="#cb42-2"></a>  <span class="fu">cdmFlatten</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a>cdm2 <span class="sc">%&gt;%</span> </span>
+<span id="cb46-2"><a href="#cb46-2"></a>  <span class="fu">cdmFlatten</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># Source:   SQL [?? x 8]
-# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpbPUuuM/file50df12d7b2e8.duckdb]
+# Database: DuckDB v0.10.0 [root@Darwin 23.0.0:R 4.3.1//var/folders/xx/01v98b6546ldnm1rg1_bvk000000gn/T//RtmpgheMjP/file554b49375611.duckdb]
    person_id observation_concept_id start_date end_date   type_concept_id domain
        &lt;int&gt;                  &lt;int&gt; &lt;date&gt;     &lt;date&gt;               &lt;int&gt; &lt;chr&gt; 
- 1        37                4230911 2023-01-08 2023-01-08        38000267 proce…
- 2       927                4162736 2021-01-29 2021-01-29        38000267 proce…
- 3      1320                4078793 2018-01-14 2018-01-14        38000267 proce…
- 4      1791                4202451 2015-01-05 2015-01-05        38000267 proce…
- 5      7393                4078793 2022-10-28 2022-10-28        38000267 proce…
- 6      7692                4078793 2015-08-20 2015-08-20        38000267 proce…
- 7      8813                4078793 2022-10-09 2022-10-09        38000267 proce…
- 8      8919                4336464 2008-02-13 2008-02-13        38000267 proce…
- 9     11434                4202451 2016-05-01 2016-05-01        38000267 proce…
-10     15730                4336464 2019-05-26 2019-05-26        38000267 proce…
+ 1    192217                4230911 2017-11-23 2017-11-23        38000267 proce…
+ 2    202337                4078793 2021-03-31 2021-03-31        38000267 proce…
+ 3    206396                4078793 2013-09-29 2013-09-29        38000267 proce…
+ 4    209067                4230911 2020-01-01 2020-01-01        38000267 proce…
+ 5    209400                4078793 2021-10-21 2021-10-21        38000267 proce…
+ 6     66775                4230911 2010-10-12 2010-10-12        38000267 proce…
+ 7     67503                4078793 2022-01-11 2022-01-11        38000267 proce…
+ 8     68429                4336464 2015-01-06 2015-01-06        38000267 proce…
+ 9     68429                4216130 2015-01-06 2015-01-06        38000267 proce…
+10     69011                4163872 2020-07-03 2020-07-03        38000267 proce…
 # ℹ more rows
 # ℹ 2 more variables: observation_concept_name &lt;chr&gt;, type_concept_name &lt;chr&gt;</code></pre>
 </div>
@@ -824,40 +857,34 @@ GROUP BY gender_concept_id</code></pre>
 <h2>Save a cdm to disk</h2>
 <p>Save as csv, parquet, or duckdb</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a>path <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
-<span id="cb44-2"><a href="#cb44-2"></a><span class="fu">dir.create</span>(path)</span>
-<span id="cb44-3"><a href="#cb44-3"></a></span>
-<span id="cb44-4"><a href="#cb44-4"></a>cdm2 <span class="sc">%&gt;%</span> </span>
-<span id="cb44-5"><a href="#cb44-5"></a>  <span class="fu">cdm_select_tbl</span>(<span class="sc">-</span><span class="fu">tbl_group</span>(<span class="st">"vocab"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-6"><a href="#cb44-6"></a>  <span class="fu">stow</span>(<span class="at">path =</span> path, <span class="at">format =</span> <span class="st">"parquet"</span>)</span>
-<span id="cb44-7"><a href="#cb44-7"></a></span>
-<span id="cb44-8"><a href="#cb44-8"></a><span class="fu">list.files</span>(path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a>path <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb48-2"><a href="#cb48-2"></a><span class="fu">dir.create</span>(path)</span>
+<span id="cb48-3"><a href="#cb48-3"></a></span>
+<span id="cb48-4"><a href="#cb48-4"></a>cdm2 <span class="sc">%&gt;%</span> </span>
+<span id="cb48-5"><a href="#cb48-5"></a>  <span class="fu">cdm_select_tbl</span>(<span class="sc">-</span><span class="fu">tbl_group</span>(<span class="st">"vocab"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb48-6"><a href="#cb48-6"></a>  <span class="fu">stow</span>(<span class="at">path =</span> path, <span class="at">format =</span> <span class="st">"parquet"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="copy-a-cdm-from-one-database-to-another" class="slide level2">
 <h2>Copy a cdm from one database to another</h2>
 <p>Experimental</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1"></a>con2 <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(RPostgres<span class="sc">::</span><span class="fu">Postgres</span>(), </span>
-<span id="cb45-2"><a href="#cb45-2"></a>                      <span class="at">dbname =</span> <span class="st">"test"</span>,</span>
-<span id="cb45-3"><a href="#cb45-3"></a>                      <span class="at">host =</span> <span class="st">"localhost"</span>,</span>
-<span id="cb45-4"><a href="#cb45-4"></a>                      <span class="at">user =</span> <span class="st">"postgres"</span>,</span>
-<span id="cb45-5"><a href="#cb45-5"></a>                      <span class="at">password =</span> <span class="st">"postgres"</span>)</span>
-<span id="cb45-6"><a href="#cb45-6"></a></span>
-<span id="cb45-7"><a href="#cb45-7"></a></span>
-<span id="cb45-8"><a href="#cb45-8"></a>cdm2 <span class="sc">%&gt;%</span> </span>
-<span id="cb45-9"><a href="#cb45-9"></a>  <span class="fu">cdm_select_tbl</span>(<span class="sc">-</span><span class="fu">tbl_group</span>(<span class="st">"vocab"</span>)) <span class="sc">%&gt;%</span> </span>
-<span id="cb45-10"><a href="#cb45-10"></a>  <span class="fu">copyCdmTo</span>(con2, ., <span class="at">schema =</span> <span class="st">"cdm"</span>, <span class="at">overwrite =</span> T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a>cdm2 <span class="ot">&lt;-</span> <span class="fu">cdmFromCon</span>(con2, <span class="at">cdmSchema =</span> <span class="st">"cdm"</span>, <span class="at">writeSchema =</span> <span class="st">"scratch"</span>)</span>
-<span id="cb46-2"><a href="#cb46-2"></a>cdm2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1"></a>con2 <span class="ot">&lt;-</span> DBI<span class="sc">::</span><span class="fu">dbConnect</span>(RPostgres<span class="sc">::</span><span class="fu">Postgres</span>(), </span>
+<span id="cb49-2"><a href="#cb49-2"></a>                      <span class="at">dbname =</span> <span class="st">"test"</span>,</span>
+<span id="cb49-3"><a href="#cb49-3"></a>                      <span class="at">host =</span> <span class="st">"localhost"</span>,</span>
+<span id="cb49-4"><a href="#cb49-4"></a>                      <span class="at">user =</span> <span class="st">"postgres"</span>,</span>
+<span id="cb49-5"><a href="#cb49-5"></a>                      <span class="at">password =</span> <span class="st">"postgres"</span>)</span>
+<span id="cb49-6"><a href="#cb49-6"></a></span>
+<span id="cb49-7"><a href="#cb49-7"></a></span>
+<span id="cb49-8"><a href="#cb49-8"></a>cdm2InPostgres <span class="ot">&lt;-</span> cdm2 <span class="sc">%&gt;%</span> </span>
+<span id="cb49-9"><a href="#cb49-9"></a>  <span class="fu">cdm_select_tbl</span>(<span class="sc">-</span><span class="fu">tbl_group</span>(<span class="st">"vocab"</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb49-10"><a href="#cb49-10"></a>  <span class="fu">copyCdmTo</span>(con2, ., <span class="at">schema =</span> <span class="st">"cdm"</span>, <span class="at">overwrite =</span> T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="disconnect" class="slide level2">
 <h2>Disconnect</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1"></a>DBI<span class="sc">::</span><span class="fu">dbDisconnect</span>(con)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a>DBI<span class="sc">::</span><span class="fu">dbDisconnect</span>(con)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="footer footer-default">
 

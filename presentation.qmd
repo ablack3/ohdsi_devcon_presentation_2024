@@ -18,13 +18,39 @@ DBI = Database Interface
 
 Various packages the driver functionality (e.g. RPostgres, odbc, DatabaseConnector)
 
-```{r, eval=FALSE}
-con <- DBI::dbConnect(RPostgres::Postgres(),
-                      dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
-                      host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
-                      user = Sys.getenv("CDM5_POSTGRESQL_USER"),
-                      password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+```{r, eval=T}
+con <- DBI::dbConnect(odbc::odbc(),
+                      Driver   = Sys.getenv("SQL_SERVER_DRIVER"),
+                      Server   = Sys.getenv("CDM5_SQL_SERVER_SERVER"),
+                      Database = Sys.getenv("CDM5_SQL_SERVER_CDM_DATABASE"),
+                      UID      = Sys.getenv("CDM5_SQL_SERVER_USER"),
+                      PWD      = Sys.getenv("CDM5_SQL_SERVER_PASSWORD"),
+                      TrustServerCertificate="yes",
+                      Port     = 1433)
+
+cdmSchema <- c(catalog = "cdmv5", schema = "dbo")
+writeSchema <- c(catalog = "tempdb", schema = "dbo", prefix = "temp_")
+achillesSchema <- c(catalog = "ohdsi", schema = "dbo")
+
 ```
+
+
+## Create CDM reference
+
+```{r, error=TRUE, warning=TRUE}
+library(CDMConnector)
+
+cdm <- cdmFromCon(
+  con,
+  cdmSchema = cdmSchema,
+  writeSchema = writeSchema,
+  achillesSchema = achillesSchema
+)
+```
+```{r}
+DBI::dbDisconnect(con)
+```
+
 
 
 ## Example CDM datasets (Eunomia)
@@ -83,7 +109,7 @@ snapshot(cdm) %>% tidyr::gather()
 
 - Write dplyr code to query the CDM
 - dplyr gets translated to SQL automatically
-- We test on Postgres, SQL Server, Snowflake, Redshift, duckdb
+- testing Postgres, SQLServer, Snowflake, Redshift, duckdb
 - Adding Databricks/Spark tests soon
 - Aim to support all OHDSI dbms and any R driver backend
 
@@ -217,8 +243,6 @@ dir.create(path)
 cdm2 %>% 
   cdm_select_tbl(-tbl_group("vocab")) %>% 
   stow(path = path, format = "parquet")
-
-list.files(path)
 ```
 
 ## Copy a cdm from one database to another
@@ -234,16 +258,11 @@ con2 <- DBI::dbConnect(RPostgres::Postgres(),
                       password = "postgres")
 
 
-cdm2 %>% 
+cdm2InPostgres <- cdm2 %>% 
   cdm_select_tbl(-tbl_group("vocab")) %>% 
   copyCdmTo(con2, ., schema = "cdm", overwrite = T)
-
 ```
 
-```{r, eval=FALSE}
-cdm2 <- cdmFromCon(con2, cdmSchema = "cdm", writeSchema = "scratch")
-cdm2
-```
 
 ## Disconnect
 
