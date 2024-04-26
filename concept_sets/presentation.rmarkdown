@@ -1,0 +1,220 @@
+---
+title: "CDMConnector"
+format: revealjs
+editor: visual
+---
+
+
+## CDMConnector
+
+Main goal of this package is to create an R object that represents the OMOP CDM. 
+
+We can the pass this object to analytic functions in other Darwin packages.
+
+
+---
+title: "Using Darwin Tools"
+author: "Adam Black"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Connect to an omop CDM using DBI 
+
+
+DBI is a unified database interface from R which we can use to connect to our cdm database.
+
+
+
+```{r}
+con <- DBI::dbConnect(RPostgres::Postgres(),
+                      dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                      host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                      user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                      password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+
+write_schema <- Sys.getenv("CDM5_POSTGRESQL_SCRATCH_SCHEMA")
+cdm_schema <- Sys.getenv("CDM5_POSTGRESQL_CDM_SCHEMA")
+
+
+
+# DBI::dbGetQuery(con, "select schema_name from information_schema.schemata;")
+```
+
+
+# Create a cdm object reference
+
+
+```{r}
+
+library(CDMConnector)
+
+cdm <- cdm_from_con(
+  con,
+  cdm_schema = cdm_schema,
+  write_schema = write_schema,
+  achilles_schema = "ohdsi"
+)
+
+```
+
+
+# Create a cdm object reference
+
+This functions creates a list of references to the cdm tables and does various validate checks
+
+- Do the tables have the correct column names?
+- Do we have write access to the cdm?
+
+This object is just like Andromda objects in Hades, but for a remote (or local) OMOP CDM.
+
+
+```{r}
+cdm$person
+```
+
+
+
+# Database Characterization
+
+We can get some basic info about the cdm using `snapshot`.
+
+
+```{r}
+snapshot(cdm)
+```
+
+
+
+# CDM Queries
+
+We write dplyr code to query the CDM which gets translated to the correct SQL dialect for your dbms.
+
+Currently we only test on: postgres, sql server, snowflake, redshift, (spark coming soon)
+
+SQL translations are maintained by Posit and the R community in the dbplyr package.
+
+
+Here is a simple query of the most common drug ingredients in the cdm.
+
+
+```{r}
+library(dplyr, warn.conflicts = F)
+
+cdm$drug_era %>% 
+  left_join(cdm$concept, by = c("drug_concept_id" = "concept_id")) %>% 
+  select(drug_concept = concept_name) %>% 
+  count(drug_concept, sort = T) 
+```
+
+
+We can look at the sql that was sent to the database.
+
+
+```{r}
+cdm$drug_era %>% 
+  left_join(cdm$concept, by = c("drug_concept_id" = "concept_id")) %>% 
+  select(drug_concept = concept_name) %>% 
+  count(drug_concept, sort = T) %>% 
+  show_query()
+```
+
+
+CDMConnector has some helper functions to make cross platform queries easier. A good example is the `quantile` function which is quite important for data analysis but not implemented the same on all database systems.
+
+
+
+```{r}
+cdm$person %>% 
+  group_by(gender_concept_id) %>% 
+  summarize_quantile(year_of_birth, probs = seq(0,1, by = .1)) 
+```
+
+
+This saves us from writing a lot of SQL
+
+
+```{r}
+
+cdm$person %>% 
+  group_by(gender_concept_id) %>% 
+  summarize_quantile(year_of_birth, probs = seq(0,1, by = .1)) %>% 
+  show_query()
+
+```
+
+
+# Cohort Generation
+
+Let's generate some Atlas cohorts.
+
+Just put your Atlas cohort json in a folder. Use descriptive filenames without spaces or special characters.
+
+
+```{r}
+cohort_set <- read_cohort_set("cohorts")
+
+cohort_set
+```
+
+```{r}
+cdm <- cdm %>% 
+  generate_cohort_set(cohort_set,
+                      name = "cohort", 
+                      overwrite = TRUE)
+```
+
+```{r}
+cdm$cohort
+```
+
+```{r}
+cohort_count(cdm$cohort)
+```
+
+```{r}
+settings(cdm$cohort)
+```
+
+```{r}
+cohort_attrition(cdm$cohort)
+```
+
+
+
+
+We can use PatientProfiles to add additional variables to the cohort table. Very useful.
+
+
+```{r}
+library(PatientProfiles)
+
+cdm$cohort %>% 
+  addAge() %>% 
+  addSex() 
+```
+
+
+
+Suppose we have a bunch of concept sets and we want to see which patients in our cohort have those in the year prior to index. 
+
+
+```{r}
+
+concept_sets <- CodelistGenerator::codesFromConceptSet("concept_sets", cdm)
+
+db <- cdm$cohort %>% 
+  addConceptIntersectFlag(conceptSet = concept_sets,
+                          indexDate = "cohort_start_date", 
+                          window = list("any_time_prior" = c(-Inf, 0), "one_year_prior" = c(-365, 0))) 
+
+
+
+
+```
+

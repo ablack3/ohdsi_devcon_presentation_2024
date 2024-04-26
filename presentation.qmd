@@ -1,0 +1,252 @@
+---
+title: "CDMConnector"
+format: revealjs
+editor: visual
+---
+
+## CDMConnector
+
+![](cdmconnector-hex.png){.absolute top=200 left=350}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Connect to a database using DBI 
+
+DBI = Database Interface
+
+Various packages the driver functionality (e.g. RPostgres, odbc, DatabaseConnector)
+
+```{r, eval=FALSE}
+con <- DBI::dbConnect(RPostgres::Postgres(),
+                      dbname = Sys.getenv("CDM5_POSTGRESQL_DBNAME"),
+                      host = Sys.getenv("CDM5_POSTGRESQL_HOST"),
+                      user = Sys.getenv("CDM5_POSTGRESQL_USER"),
+                      password = Sys.getenv("CDM5_POSTGRESQL_PASSWORD"))
+```
+
+
+## Example CDM datasets (Eunomia)
+
+```{r}
+library(CDMConnector)
+exampleDatasets()
+```
+
+## Example CDM datasets (Eunomia)
+
+Download and connect to an example CDM database
+
+```{r}
+library(CDMConnector)
+con <- DBI::dbConnect(duckdb::duckdb(), 
+                      dbdir = eunomiaDir("synthea-covid19-200k"))
+```
+
+## Create a cdm object reference
+
+```{r,message=TRUE}
+cdm <- cdmFromCon(
+  con,
+  cdmSchema = "main",
+  writeSchema = "main"
+)
+
+print(cdm)
+```
+
+## Create a cdm object reference
+
+`cdmFromCon` function creates a list of references to the cdm tables and does various validation checks
+
+-   Do the tables have the correct column names?
+-   Do we have write access to the cdm?
+
+## Create a cdm object reference
+
+This object is a list of table references (like Andromda)
+
+```{r}
+cdm$person
+```
+
+## Database Characterization
+
+We can get some basic info about the cdm using `snapshot`.
+
+```{r}
+snapshot(cdm) %>% tidyr::gather()
+```
+
+## CDM Queries
+
+- Write dplyr code to query the CDM
+- dplyr gets translated to SQL automatically
+- We test on Postgres, SQL Server, Snowflake, Redshift, duckdb
+- Adding Databricks/Spark tests soon
+- Aim to support all OHDSI dbms and any R driver backend
+
+## CDM Queries
+
+Most common drug ingredients
+
+```{r}
+library(dplyr, warn.conflicts = F)
+
+cdm$drug_era %>% 
+  left_join(cdm$concept, by = c("drug_concept_id" = "concept_id")) %>% 
+  select(drug_concept = concept_name, drug_concept_id) %>% 
+  count(drug_concept, drug_concept_id, sort = T) 
+```
+
+## CDM Queries
+
+Inspect the SQL
+
+```{r}
+cdm$drug_exposure %>% 
+  left_join(cdm$concept, by = c("drug_concept_id" = "concept_id")) %>% 
+  select(drug_concept = concept_name) %>% 
+  count(drug_concept, sort = T) %>% 
+  show_query()
+```
+
+## Query functions
+
+CDMConnector has some helper functions to make cross platform queries easier. 
+
+A good example is the `quantile` function which is quite important for data analysis but not implemented the same on all database systems.
+
+
+## Query functions
+
+```{r}
+cdm$person %>% 
+  group_by(gender_concept_id) %>% 
+  summarize_quantile(year_of_birth, probs = seq(0,1, by = .1)) 
+```
+
+## Query functions
+
+This saves us from writing a lot of SQL
+
+```{r}
+cdm$person %>% 
+  group_by(gender_concept_id) %>% 
+  summarize_quantile(year_of_birth, probs = seq(0,1, by = .1)) %>% 
+  show_query()
+
+```
+
+## Cohort Generation
+
+- Put Atlas cohort json files in a folder
+- Use descriptive filenames
+
+```{r}
+list.files("cohorts")
+(cohortSet <- readCohortSet("cohorts"))
+```
+
+## Cohort Generation
+
+```{r}
+cdm <- cdm %>% 
+  generateCohortSet(cohortSet,
+                    name = "cohort", 
+                    overwrite = TRUE)
+
+cdm$cohort
+```
+
+## Cohort table attributes
+
+```{r}
+cohort_count(cdm$cohort)
+settings(cdm$cohort)
+cohort_attrition(cdm$cohort)
+```
+
+## Cohort tables from concepts sets
+
+```{r}
+clopidogrel <- CodelistGenerator::getDescendants(cdm, 1322184)
+nitroglycerin <- CodelistGenerator::getDescendants(cdm, 1361711)
+
+cdm <- generateConceptCohortSet(
+  cdm,
+  name = "cohort",
+  conceptSet = list("clopidogrel" = clopidogrel$concept_id,
+                    "nitroglycerin" = nitroglycerin$concept_id),
+  limit = "first",
+  requiredObservation = c(0, 0),
+  end = "observation_period_end_date",
+  overwrite = TRUE
+)
+
+cohortCount(cdm$cohort)
+```
+
+## Subsetting the CDM
+
+```{r}
+
+cdm2 <- cdm %>% 
+  cdmSubsetCohort(cohortTable = "cohort", cohortId = 1, verbose = T)
+
+tally(cdm$person)
+tally(cdm2$person)
+```
+
+## Flatten a CDM
+
+```{r}
+cdm2 %>% 
+  cdmFlatten()
+```
+
+## Save a cdm to disk
+
+Save as csv, parquet, or duckdb
+
+```{r, eval=FALSE}
+path <- tempfile()
+dir.create(path)
+
+cdm2 %>% 
+  cdm_select_tbl(-tbl_group("vocab")) %>% 
+  stow(path = path, format = "parquet")
+
+list.files(path)
+```
+
+## Copy a cdm from one database to another
+
+Experimental
+
+```{r, eval=FALSE}
+
+con2 <- DBI::dbConnect(RPostgres::Postgres(), 
+                      dbname = "test",
+                      host = "localhost",
+                      user = "postgres",
+                      password = "postgres")
+
+
+cdm2 %>% 
+  cdm_select_tbl(-tbl_group("vocab")) %>% 
+  copyCdmTo(con2, ., schema = "cdm", overwrite = T)
+
+```
+
+```{r, eval=FALSE}
+cdm2 <- cdmFromCon(con2, cdmSchema = "cdm", writeSchema = "scratch")
+cdm2
+```
+
+## Disconnect
+
+```{r}
+DBI::dbDisconnect(con)
+```
